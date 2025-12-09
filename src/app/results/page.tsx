@@ -3,7 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useState, useEffect } from 'react';
 import BeforeAfterSlider from '@/components/BeforeAfterSlider';
-import ShopTheLook from '@/components/ShopTheLook';
+import ProductShowcase from '@/components/ProductShowcase';
 import { motion } from 'framer-motion';
 import { globalState } from '@/utils/globalState';
 
@@ -219,13 +219,13 @@ function ResultsContent() {
                     </div>
                 </motion.div>
 
-                {/* Shop The Look */}
+                {/* Product Showcase */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6 }}
                 >
-                    <ShopTheLook style={style} roomType={roomType} products={products} />
+                    <ProductShowcase products={products} roomType={roomType} />
                 </motion.div>
 
                 {/* CTA */}

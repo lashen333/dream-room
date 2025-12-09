@@ -10,11 +10,9 @@ const supabase = createClient(
 );
 
 export default function AdminPage() {
-    const [url, setUrl] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [products, setProducts] = useState<any[]>([]);
-    const [discoveredLinks, setDiscoveredLinks] = useState<any[]>([]);
     const [categorizing, setCategorizing] = useState(false);
 
     useEffect(() => {
@@ -64,54 +62,9 @@ export default function AdminPage() {
         }
     };
 
-    const handleDiscover = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setMessage('');
-        setDiscoveredLinks([]);
 
-        try {
-            const response = await fetch('/api/products/scrape', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url, action: 'discover' }),
-            });
-            const data = await response.json();
-            if (data.success) {
-                setDiscoveredLinks(data.links);
-                setMessage(`✅ Found ${data.links.length} potential categories.`);
-            } else {
-                setMessage(`❌ Error: ${data.error}`);
-            }
-        } catch (error) {
-            setMessage('❌ Failed to discover links');
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
-    const handleScrapeUrl = async (scrapeUrl: string) => {
-        setIsLoading(true);
-        setMessage(`Scraping ${scrapeUrl}...`);
-        try {
-            const response = await fetch('/api/products/scrape', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: scrapeUrl, action: 'scrape' }),
-            });
-            const data = await response.json();
-            if (data.success) {
-                setMessage(`✅ Scraped ${data.count} products from ${scrapeUrl}`);
-                fetchProducts();
-            } else {
-                setMessage(`❌ Error: ${data.error}`);
-            }
-        } catch (error) {
-            setMessage('❌ Failed to scrape');
-        } finally {
-            setIsLoading(false);
-        }
-    };
+
 
     return (
         <div className="min-h-screen bg-background p-8">
@@ -151,46 +104,37 @@ export default function AdminPage() {
                     </div>
 
                     <div className="flex gap-4 mb-4">
-                        <input
-                            type="url"
-                            placeholder="Enter website URL (e.g. https://www.damro.lk)"
-                            value={url}
-                            onChange={(e) => setUrl(e.target.value)}
-                            className="flex-1 p-3 rounded-lg border border-border bg-muted/50 focus:border-primary outline-none"
-                        />
                         <button
-                            onClick={handleDiscover}
-                            disabled={isLoading || !url}
-                            className="bg-secondary text-secondary-foreground px-6 py-3 rounded-lg font-medium hover:opacity-90 disabled:opacity-50 transition-all"
+                            onClick={async () => {
+                                setIsLoading(true);
+                                setMessage('🚀 Starting full catalog scrape...');
+                                try {
+                                    const response = await fetch('/api/products/scrape', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ action: 'scrape_all' }),
+                                    });
+                                    const data = await response.json();
+                                    if (data.success) {
+                                        setMessage(`✅ Scraping complete! Found ${data.totalFound} new products.`);
+                                        fetchProducts();
+                                    } else {
+                                        setMessage(`❌ Error: ${data.error}`);
+                                    }
+                                } catch (error) {
+                                    setMessage('❌ Scraping failed');
+                                } finally {
+                                    setIsLoading(false);
+                                }
+                            }}
+                            disabled={isLoading}
+                            className="flex-1 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:opacity-90 disabled:opacity-50 transition-all"
                         >
-                            🔍 Discover Categories
-                        </button>
-                        <button
-                            onClick={(e) => { e.preventDefault(); handleScrapeUrl(url); }}
-                            disabled={isLoading || !url}
-                            className="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:opacity-90 disabled:opacity-50 transition-all"
-                        >
-                            🚀 Scrape Now
+                            {isLoading ? '⏳ Scraping...' : '🚀 Scrape All Products'}
                         </button>
                     </div>
 
-                    {discoveredLinks.length > 0 && (
-                        <div className="mt-4 p-4 bg-muted/30 rounded-lg border border-border">
-                            <h3 className="font-medium mb-3">Found Categories (Click to Scrape):</h3>
-                            <div className="flex flex-wrap gap-2">
-                                {discoveredLinks.map((link, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={() => handleScrapeUrl(link.url)}
-                                        className="text-xs bg-background border border-border hover:border-primary hover:text-primary px-3 py-2 rounded-full transition-all truncate max-w-[200px]"
-                                        title={link.url}
-                                    >
-                                        {link.title}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+
 
                     {message && (
                         <div className={`mt-4 p-3 rounded-lg ${message.includes('Error') || message.includes('Failed') ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
